@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>GenLayer Status Spinner — Live Demo (GoldPriceOracle)</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #070707;
+    color: #F5F5F5;
+    padding: 40px;
+    max-width: 640px;
+  }
+  a { color: #6f7bff; }
+  #status-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+  #label { font-size: 14px; color: #CACACA; }
+  button {
+    background: #110FFF; color: white; border: none; border-radius: 8px;
+    padding: 10px 16px; font-size: 14px; cursor: pointer;
+  }
+  code { background: #1a1a1a; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  pre {
+    background: #1a1a1a; padding: 12px; border-radius: 8px; font-size: 12px;
+    overflow-x: auto; margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+  <h1>GenLayer Status Spinner — Live Demo</h1>
+  <p>
+    This tracks a <strong>real, finalized transaction</strong> on
+    <strong>GoldPriceOracle</strong>, an Intelligent Contract deployed to
+    GenLayer Studio:
+  </p>
+  <p>
+    Contract:
+    <a href="https://explorer-studio.genlayer.com/address/0x1763E5C8f4966D2d60e4774a348F46C50fF6AD72"
+       target="_blank">0x1763E5C8f4966D2d60e4774a348F46C50fF6AD72</a>
+  </p>
+  <p>
+    Transaction (<code>resolve_agreement</code>, FINALIZED/SUCCESS):
+    <a href="https://explorer-studio.genlayer.com/tx/0xf28c75058b7ee5beed2a3a1225b53287e2a409916b4c1316dd87c8683f66e26d"
+       target="_blank">0xf28c75...66e26d</a>
+  </p>
+
+  <button id="run">Track transaction status</button>
+
+  <div id="status-row">
+    <div id="spinner"></div>
+    <span id="label">Idle</span>
+  </div>
+
+  <pre id="result"></pre>
+
+  <script type="module">
+    import { createClient } from "genlayer-js";
+    import { studionet } from "genlayer-js/chains";
+    import { attachGenLayerStatusSpinner } from "./genlayer-status-spinner.js";
+
+    const client = createClient({ chain: studionet });
+    const spinnerEl = document.getElementById("spinner");
+    const label = document.getElementById("label");
+    const resultEl = document.getElementById("result");
+
+    // A real, already-finalized transaction from the live GoldPriceOracle
+    // deployment — resolve_agreement() with both committed source domains
+    // present (see README §10).
+    const REAL_TX_HASH =
+      "0xf28c75058b7ee5beed2a3a1225b53287e2a409916b4c1316dd87c8683f66e26d";
+
+    document.getElementById("run").addEventListener("click", async () => {
+      label.textContent = "Fetching live status from GenLayer…";
+
+      attachGenLayerStatusSpinner(spinnerEl, {
+        client,
+        hash: REAL_TX_HASH,
+      });
+
+      // Also show the underlying receipt so it's clear the spinner state
+      // isn't hardcoded — it's read straight from the network.
+      try {
+        const tx = await client.getTransaction({ hash: REAL_TX_HASH });
+        label.textContent = `Status: ${tx.status}`;
+        resultEl.textContent = JSON.stringify(tx, null, 2);
+      } catch (err) {
+        label.textContent = "Could not fetch transaction.";
+        resultEl.textContent = String(err);
+      }
+    });
+  </script>
+</body>
+</html>
